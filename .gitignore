@@ -1,0 +1,16 @@
+# Binaries
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Vendor
+/vendor/
+
+# OS
+.DS_Store
+
+# Env
+.env

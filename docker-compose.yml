@@ -1,0 +1,9 @@
+version: "3.8"
+
+services:
+  chat:
+    build: .
+    ports:
+      - "4003:4003"
+    environment:
+      - JWT_SECRET=your-super-secret-key
