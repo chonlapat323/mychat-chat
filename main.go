@@ -6,14 +6,21 @@ import (
 	"mychat-chat/handlers"
 	"mychat-chat/middleware"
 	"net/http"
+	"os"
 
 	"github.com/joho/godotenv"
 )
 
 func main() {
-	_ = godotenv.Load()
+	// โหลดค่าจาก .env
+	if os.Getenv("APP_ENV") != "production" {
+		err := godotenv.Load()
 
-	// ✅ สำคัญมาก!
+		if err != nil {
+			log.Fatal("ไม่พบไฟล์ .env หรือโหลดไม่สำเร็จ")
+		}
+	}
+
 	database.InitMongo()
 
 	http.Handle("/ws", middleware.CORSMiddleware(http.HandlerFunc(handlers.WebSocketHandler)))
