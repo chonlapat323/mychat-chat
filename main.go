@@ -2,17 +2,22 @@ package main
 
 import (
 	"log"
+	"mychat-chat/database"
+	"mychat-chat/handlers"
+	"mychat-chat/middleware"
 	"net/http"
 
-	"mychat-chat/handlers"
+	"github.com/joho/godotenv"
 )
 
 func main() {
-	http.HandleFunc("/ws", handlers.WebSocketHandler)
+	_ = godotenv.Load()
 
-	log.Println("WebSocket service running at :4003")
-	err := http.ListenAndServe(":4003", nil)
-	if err != nil {
-		log.Fatal("ListenAndServe:", err)
-	}
+	// ✅ สำคัญมาก!
+	database.InitMongo()
+
+	http.Handle("/ws", middleware.CORSMiddleware(http.HandlerFunc(handlers.WebSocketHandler)))
+
+	log.Println("WebSocket service running at :5001")
+	log.Fatal(http.ListenAndServe(":5001", nil))
 }

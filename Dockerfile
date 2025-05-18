@@ -1,9 +1,10 @@
-FROM golang:1.21
+FROM golang:1.24
 
 WORKDIR /app
 COPY . .
-RUN go mod download
-RUN go build -o main .
 
-EXPOSE 4003
-CMD ["./main"]
+RUN go build -o mychat-room .
+
+EXPOSE 5001
+
+CMD ["./mychat-room"]
