@@ -105,23 +105,32 @@ func WebSocketHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			roomConnections[msg.RoomID][conn] = userID
 			mu.Unlock()
+
 			log.Printf("👥 User %s joined room %s", userID, msg.RoomID)
 
-			// ✅ broadcast ว่า user คนนี้ join
-			userJoined := struct {
-				Type    string `json:"type"`
-				Payload struct {
-					ID   string `json:"id"`
-					Name string `json:"name"`
-				} `json:"payload"`
+			// ✅ สร้าง user แบบเต็ม
+			user := struct {
+				ID    string `json:"id"`
+				Name  string `json:"name"`
+				Email string `json:"email"`
 			}{
-				Type: "user_joined",
+				ID:    userID,
+				Name:  userName, // หรือแยกชื่อจริงถ้ามี
+				Email: userName, // กรณีใช้ email เป็น name
 			}
-			userJoined.Payload.ID = userID
-			userJoined.Payload.Name = userName
+
+			// ✅ เตรียม event
+			userJoined := struct {
+				Type    string      `json:"type"`
+				Payload interface{} `json:"payload"`
+			}{
+				Type:    "user_joined",
+				Payload: user,
+			}
 
 			data, _ := json.Marshal(userJoined)
 
+			// ✅ broadcast ไปยังทุกคนในห้อง
 			mu.Lock()
 			for c := range roomConnections[msg.RoomID] {
 				if err := c.WriteMessage(websocket.TextMessage, data); err != nil {
