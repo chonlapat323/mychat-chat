@@ -107,6 +107,31 @@ func WebSocketHandler(w http.ResponseWriter, r *http.Request) {
 			mu.Unlock()
 			log.Printf("👥 User %s joined room %s", userID, msg.RoomID)
 
+			// ✅ broadcast ว่า user คนนี้ join
+			userJoined := struct {
+				Type    string `json:"type"`
+				Payload struct {
+					ID   string `json:"id"`
+					Name string `json:"name"`
+				} `json:"payload"`
+			}{
+				Type: "user_joined",
+			}
+			userJoined.Payload.ID = userID
+			userJoined.Payload.Name = userName
+
+			data, _ := json.Marshal(userJoined)
+
+			mu.Lock()
+			for c := range roomConnections[msg.RoomID] {
+				if err := c.WriteMessage(websocket.TextMessage, data); err != nil {
+					log.Println("Write error (user_joined):", err)
+					c.Close()
+					removeConnectionFromAllRooms(c)
+				}
+			}
+			mu.Unlock()
+
 		case "message":
 			// ✅ เช็คก่อนว่า connection อยู่ในห้องแล้วหรือยัง
 			mu.Lock()
