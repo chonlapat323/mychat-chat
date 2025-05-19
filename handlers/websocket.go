@@ -97,23 +97,40 @@ func WebSocketHandler(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		mu.Lock()
-		if _, ok := roomConnections[msg.RoomID]; !ok {
-			roomConnections[msg.RoomID] = make(map[*websocket.Conn]string)
+		switch msg.Type {
+		case "join":
+			mu.Lock()
+			if _, ok := roomConnections[msg.RoomID]; !ok {
+				roomConnections[msg.RoomID] = make(map[*websocket.Conn]string)
+			}
+			roomConnections[msg.RoomID][conn] = userID
+			mu.Unlock()
+			log.Printf("👥 User %s joined room %s", userID, msg.RoomID)
+
+		case "message":
+			// ✅ เช็คก่อนว่า connection อยู่ในห้องแล้วหรือยัง
+			mu.Lock()
+			_, joined := roomConnections[msg.RoomID][conn]
+			mu.Unlock()
+
+			if !joined {
+				log.Printf("⚠️ Message ignored: user %s has not joined room %s", userID, msg.RoomID)
+				continue
+			}
+
+			log.Printf("📩 Message from user %s in room %s: %s", userID, msg.RoomID, msg.Text)
+
+			if err := SaveMessageToMongo(msg.RoomID, userID, userName, msg.Text); err != nil {
+				log.Println("❌ Failed to save message to MongoDB:", err)
+			} else {
+				log.Println("💾 Message saved to MongoDB")
+			}
+
+			broadcastToRoom(msg.RoomID, userID, userName, msg.Text)
+
+		default:
+			log.Printf("⚠️ Unknown message type: %s", msg.Type)
 		}
-		roomConnections[msg.RoomID][conn] = userID
-		mu.Unlock()
-
-		log.Printf("📩 Message from user %s in room %s: %s", userID, msg.RoomID, msg.Text)
-
-		err = SaveMessageToMongo(msg.RoomID, userID, userName, msg.Text)
-		if err != nil {
-			log.Println("❌ Failed to save message to MongoDB:", err)
-		} else {
-			log.Println("💾 Message saved to MongoDB")
-		}
-
-		broadcastToRoom(msg.RoomID, userID, userName, msg.Text)
 	}
 }
 
