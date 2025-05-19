@@ -64,6 +64,7 @@ func WebSocketHandler(w http.ResponseWriter, r *http.Request) {
 
 	userID := claims.UserID
 	userName := claims.Email
+	ImageURL := claims.ImageURL
 	log.Printf("✅ WebSocket connected: user %s (%s)", userID, userName)
 
 	defer func() {
@@ -110,13 +111,15 @@ func WebSocketHandler(w http.ResponseWriter, r *http.Request) {
 
 			// ✅ สร้าง user แบบเต็ม
 			user := struct {
-				ID    string `json:"id"`
-				Name  string `json:"name"`
-				Email string `json:"email"`
+				ID       string `json:"id"`
+				Name     string `json:"name"`
+				Email    string `json:"email"`
+				ImageURL string `json:"image_url"`
 			}{
-				ID:    userID,
-				Name:  userName, // หรือแยกชื่อจริงถ้ามี
-				Email: userName, // กรณีใช้ email เป็น name
+				ID:       userID,
+				Name:     userName,
+				Email:    userName,
+				ImageURL: ImageURL,
 			}
 
 			// ✅ เตรียม event
